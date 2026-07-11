@@ -1,6 +1,6 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 16:07 UTC
+Aktualizacja: 2026-07-11 16:10 UTC
 
 ## Wersja i środowisko
 
@@ -8,9 +8,9 @@ Aktualizacja: 2026-07-11 16:07 UTC
 - Wydanie: `main` @ `6235259`, tag `v0.1.0-cpu`.
 - PR #1: squash merged; check `ci` zaliczony w 4 min 1 s.
 - Ochrona `main`: włączona; wymagane aktualne `ci`, liniowa historia i rozwiązane rozmowy.
-- Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:6235259` i
-  `ogniskowy-grajek-worker-cpu:6235259`.
-- Kandydat publikacji subdomeny: `agent/publish-subdomain`.
+- Aktywny profil: `CPU`; web `ogniskowy-grajek-web:3cec266`, worker bez zmian kodu na
+  `ogniskowy-grajek-worker-cpu:6235259` (również oznaczony `3cec266` na następny restart).
+- Kandydat publikacji subdomeny: `agent/publish-subdomain` @ `3cec266`.
 - Lokalny URL po wdrożeniu zmiany: `http://127.0.0.1:8501/`.
 - Usługa `ogniskowy-grajek.service`: zainstalowana, włączona i aktywna.
 - Publiczny URL: `https://ogniskowy-grajek.klikfirma.pl/` — **LIVE**.

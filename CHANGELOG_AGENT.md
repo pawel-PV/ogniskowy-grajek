@@ -22,3 +22,4 @@
   `ogniskowy-grajek.klikfirma.pl`; rozpoczęto powrót Streamlit na root subdomeny.
 - Przełączono Streamlit na root subdomeny; publiczne UI/health zwracają HTTPS 200, WebSocket 101,
   a regresja `api.klikfirma.pl` i `gra.klikfirma.pl` zakończyła się powodzeniem.
+- Commit wdrożonego wariantu subdomeny: `3cec266`.
