@@ -1,18 +1,18 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 16:58 UTC
+Aktualizacja: 2026-07-11 17:13 UTC
 
 ## Wersja i środowisko
 
 - Repozytorium: `pawel-PV/ogniskowy-grajek`.
-- Kandydat v0.2: gałąź `agent/lyrics-songbook-v2`, implementacja @ `225ece9`, baza `main` @ `033ab14`.
-- Aktywna produkcja do czasu zielonego CI: v0.1, web `ogniskowy-grajek-web:3cec266`, worker
-  `ogniskowy-grajek-worker-cpu:6235259`.
-- Profil: `CPU`; GPU pozostaje niedostępne z powodu fizycznie odłączonego eGPU.
+- Wydanie: `main` @ `27cd8f6a9cb8`, tag `v0.2.0-cpu`.
+- PR #5: squash merged; wymagany check `ci` zaliczony w 3 min 56 s.
+- Aktywny profil: `CPU`; web `ogniskowy-grajek-web:27cd8f6a9cb8`, worker
+  `ogniskowy-grajek-worker-cpu:27cd8f6a9cb8`, pipeline `2.0.0`.
 - Usługa `ogniskowy-grajek.service`: aktywna. Publiczny URL:
-  `https://ogniskowy-grajek.klikfirma.pl/` — **LIVE v0.1**.
+  `https://ogniskowy-grajek.klikfirma.pl/` — **LIVE v0.2**.
 
-## Kandydat v0.2 — ukończone
+## Ukończone w v0.2
 
 - `AnalysisResult` i pipeline `2.0`; UI zachowuje odczyt niewygasłych wyników `1.0`.
 - Oryginalne ręczne/automatyczne napisy YouTube PL/EN bez tłumaczeń, limit `json3` 2 MB.
@@ -22,26 +22,23 @@ Aktualizacja: 2026-07-11 16:58 UTC
 - Fallback do dotychczasowych akordów i wyłącznie linku wyszukiwania Ultimate Guitar.
 - Rozszerzone oświadczenie o prawach; audio, wokal i napisy robocze są usuwane bezwarunkowo.
 
-## Weryfikacja kandydata v0.2
+## Weryfikacja wydania
 
 - Ruff format/check, `git diff --check`, kompilacja modułów i `docker compose config -q`: zaliczone.
-- Pytest: `111 passed` na Pythonie 3.11.
-- Obrazy `web`, `worker-ci` i pełny `worker-cpu`: zbudowane.
+- Pytest: `111 passed` na Pythonie 3.11; GitHub Actions `ci`: zaliczone.
+- Obrazy `web`, `worker-ci` i pełny `worker-cpu`: zbudowane; finalny worker ma około 2,37 GB.
 - Worker CPU: SQLite WAL, FFmpeg i Chordino wykryte; syntetyczny rytm 120 BPM zmierzony jako 117 BPM.
-- Przypięty Whisper medium: `--asr-smoke` załadował model lokalnie na CPU; obraz ma około 2,37 GB.
-- Legalna próbka CC, napisy YouTube: `YOUTUBE_AUTO`, język `en`, 29 słów.
-- Ta sama legalna próbka, wymuszony lokalny ASR na miksie: `LOCAL_ASR`, `en`, pewność 0,923, 21 słów.
-- Pełny legalny E2E: yt-dlp → Demucs CPU → Chordino → śpiewnik `2.0`, 7 linii, cleanup `DONE`,
-  workspace usunięty.
-
-## Pozostało przed wydaniem
-
-- Commit, draft PR, wymagany zielony check `ci`, squash merge i obrazy oznaczone SHA.
-- Ponowne sprawdzenie pustej kolejki, przełączenie wyłącznie nowego web/worker i publiczny E2E v0.2.
-- Regresja `api.klikfirma.pl`/`gra.klikfirma.pl`, potwierdzenie pustego workspace i tag `v0.2.0-cpu`.
+- Przypięty Whisper medium: model załadowany lokalnie przez `--asr-smoke` na CPU.
+- Legalna próbka CC, wymuszony lokalny ASR: `LOCAL_ASR`, `en`, pewność 0,923, 21 słów.
+- Produkcyjny E2E kolejki: `DONE`, schema 2.0, `YOUTUBE_AUTO`, 8 linii śpiewnika, eksport
+  ChordPro 458 bajtów, cleanup `DONE`; `data/work` jest pusty.
+- Publiczny health HTTPS 200 i WebSocket 101; regresja `api.klikfirma.pl` oraz `gra.klikfirma.pl`:
+  HTTP 200. Kolejka po wdrożeniu: 0 aktywnych jobów.
 
 ## Blokery zewnętrzne
 
 - **GPU: BLOCKED/DEFERRED.** Razer Core X ma stan `disconnected`, brak urządzenia NVIDIA w PCI,
   `nvidia-smi` nie komunikuje się ze sterownikiem, a Ollama jest offline. Wymagany fizyczny power-cycle
   obudowy eGPU i kontrola kabla Thunderbolt. Watchdogi GPU/Ollama pozostają wyłączone.
+
+Następny krok po powrocie użytkownika: fizyczny power-cycle eGPU i pełny smoke CUDA/VRAM.
