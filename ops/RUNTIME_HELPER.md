@@ -13,7 +13,7 @@ unset secret
 sudo install -d -o wewenek -g nogroup -m 0770 data data/work
 docker compose build web worker
 docker compose up -d --no-build --wait
-curl --fail http://127.0.0.1:8501/ogniskowy-grajek/_stcore/health
+curl --fail http://127.0.0.1:8501/_stcore/health
 docker compose exec worker python -m ogniskowy_grajek.worker --doctor
 docker compose exec worker python -m ogniskowy_grajek.worker --audio-smoke
 ```
@@ -22,18 +22,18 @@ Jednostkę systemd instalować dopiero po udanym smoke. Nie wykonuje builda przy
 
 ## Cloudflare
 
-Tunel jest zdalnie zarządzany. Po lokalnym smoke dodać przed ogólną trasą hosta `api` regułę:
+Tunel `BetaNode` jest zdalnie zarządzany. Trasa Published application:
 
 ```text
-hostname: api.klikfirma.pl
-path: ^/ogniskowy-grajek(/.*)?$
+hostname: ogniskowy-grajek.klikfirma.pl
+path: puste
 service: http://localhost:8501
+DNS: CNAME -> d17f5d12-3fdf-443c-9aad-4185c1763157.cfargotunnel.com
 ```
 
-Nie tworzyć nowego DNS — `api.klikfirma.pl` już wskazuje na tunel. Zachować późniejszą ogólną trasę
-`api.klikfirma.pl -> 8000`, trasę `gra.klikfirma.pl -> 8080` i końcowy 404. Nie restartować
-`cloudflared` i nie rotować connector tokenu. Po zmianie sprawdzić HTTPS, WebSocket Streamlit,
-`api.klikfirma.pl/health` oraz `gra.klikfirma.pl`.
+Cloudflare utworzył rekord DNS automatycznie razem z trasą. Zachować trasy `api.klikfirma.pl -> 8000`,
+`gra.klikfirma.pl -> 8080` i końcowy 404. Nie restartować `cloudflared` i nie rotować connector tokenu.
+Po wdrożeniu sprawdzić HTTPS, WebSocket Streamlit, `api.klikfirma.pl/health` i `gra.klikfirma.pl`.
 
 ## Aktywacja GPU po powrocie sprzętu
 
@@ -48,6 +48,6 @@ Nie włączać starych watchdogów GPU/Ollama bez osobnej naprawy rate limitu re
 
 ## Rollback
 
-- Publikacja: usunąć tylko regułę ścieżki `/ogniskowy-grajek`, potem zatrzymać nową usługę.
+- Publikacja: usunąć tylko trasę `ogniskowy-grajek.klikfirma.pl` i jej CNAME, potem zatrzymać usługę.
 - Aplikacja: przywrócić poprzedni tag obrazu i wykonać Compose `up`; nie używać `git reset`.
 - GPU: odtworzyć worker z samego `compose.yml`, co przywraca bezpieczny profil CPU.

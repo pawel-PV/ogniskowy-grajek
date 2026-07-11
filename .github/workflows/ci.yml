@@ -33,5 +33,5 @@ jobs:
           chmod 0777 data data/work
           trap 'docker compose down --remove-orphans' EXIT
           docker compose up -d --no-build --wait
-          curl --fail --silent http://127.0.0.1:8501/ogniskowy-grajek/_stcore/health
+          curl --fail --silent http://127.0.0.1:8501/_stcore/health
           docker compose exec -T worker python -m ogniskowy_grajek.worker --doctor

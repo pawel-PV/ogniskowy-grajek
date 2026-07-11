@@ -18,3 +18,8 @@
   `https://api.klikfirma.pl/ogniskowy-grajek/`, bez zmian w `app_new` i bez nowego DNS.
 - Zaliczone: Ruff, 94 testy, Compose, build web oraz lokalny smoke HTTP/WebSocket bazowej ścieżki.
 - Commit implementacji prefiksu: `df76b02`.
+- Użytkownik utworzył w tunelu `BetaNode` osobną trasę Published application i CNAME dla
+  `ogniskowy-grajek.klikfirma.pl`; rozpoczęto powrót Streamlit na root subdomeny.
+- Przełączono Streamlit na root subdomeny; publiczne UI/health zwracają HTTPS 200, WebSocket 101,
+  a regresja `api.klikfirma.pl` i `gra.klikfirma.pl` zakończyła się powodzeniem.
+- Commit wdrożonego wariantu subdomeny: `3cec266`.

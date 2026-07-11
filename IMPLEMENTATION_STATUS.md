@@ -1,6 +1,6 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 15:41 UTC
+Aktualizacja: 2026-07-11 16:10 UTC
 
 ## Wersja i środowisko
 
@@ -8,13 +8,12 @@ Aktualizacja: 2026-07-11 15:41 UTC
 - Wydanie: `main` @ `6235259`, tag `v0.1.0-cpu`.
 - PR #1: squash merged; check `ci` zaliczony w 4 min 1 s.
 - Ochrona `main`: włączona; wymagane aktualne `ci`, liniowa historia i rozwiązane rozmowy.
-- Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:6235259` i
-  `ogniskowy-grajek-worker-cpu:6235259`.
-- Kandydat publikacji ścieżkowej: `agent/api-path-routing` @ `df76b02`.
-- Lokalny URL po wdrożeniu zmiany: `http://127.0.0.1:8501/ogniskowy-grajek/`.
+- Aktywny profil: `CPU`; web `ogniskowy-grajek-web:3cec266`, worker bez zmian kodu na
+  `ogniskowy-grajek-worker-cpu:6235259` (również oznaczony `3cec266` na następny restart).
+- Kandydat publikacji subdomeny: `agent/publish-subdomain` @ `3cec266`.
+- Lokalny URL po wdrożeniu zmiany: `http://127.0.0.1:8501/`.
 - Usługa `ogniskowy-grajek.service`: zainstalowana, włączona i aktywna.
-- Publiczny URL: `https://api.klikfirma.pl/ogniskowy-grajek/` — oczekuje na regułę ścieżki tunelu;
-  nowy rekord DNS nie jest potrzebny.
+- Publiczny URL: `https://ogniskowy-grajek.klikfirma.pl/` — **LIVE**.
 
 ## Ukończone
 
@@ -36,6 +35,7 @@ Aktualizacja: 2026-07-11 15:41 UTC
 - E2E przez wdrożoną kolejkę: `DONE` w 58 s, 144 BPM, 4/4, capo 5,
   `DEMUCS_CPU`/`CHORDINO`/`GEMINI`; koszt Gemini około `$0.00059`; workspace pusty po cleanupie.
 - Smoke bazowej ścieżki: UI i health HTTP 200, przekierowanie prefiksu 307, WebSocket 101.
+- Publiczny smoke subdomeny: UI i health HTTPS 200, WebSocket `wss://` 101, poprawny CNAME tunelu.
 - Regresja usług: `api.klikfirma.pl/health` i `gra.klikfirma.pl` zwracają HTTP 200.
 
 ## Blokery zewnętrzne
@@ -43,11 +43,5 @@ Aktualizacja: 2026-07-11 15:41 UTC
 - **GPU: BLOCKED/DEFERRED.** Razer Core X ma stan `disconnected`, brak urządzenia NVIDIA w PCI,
   `nvidia-smi` nie komunikuje się ze sterownikiem, a Ollama jest offline. Wymagany fizyczny power-cycle
   obudowy eGPU i kontrola kabla Thunderbolt. Pełny smoke CUDA/VRAM nie może zostać wykonany zdalnie.
-- **Cloudflare: BLOCKED.** Bieżący token aplikacyjny zwraca `Not authorized` dla konfiguracji tunelu
-  i nie ma `Cloudflare Tunnel Edit`. Potrzebna jest reguła dla hosta `api.klikfirma.pl` i ścieżki
-  `^/ogniskowy-grajek(/.*)?$` przed ogólną trasą API; można dodać ją ręcznie w panelu albo użyć
-  tymczasowego tokenu Tunnel Edit.
-
 Watchdogi GPU/Ollama pozostają wyłączone po wcześniejszej pętli rebootów i nie są częścią tego wdrożenia.
-Następny krok po uzyskaniu Tunnel Edit: backup konfiguracji, reguła ścieżki i test HTTPS/WebSocket
-bez restartu `cloudflared`. Po powrocie użytkownika: fizyczny power-cycle i smoke CUDA.
+Następny krok po powrocie użytkownika: fizyczny power-cycle eGPU i pełny smoke CUDA/VRAM.
