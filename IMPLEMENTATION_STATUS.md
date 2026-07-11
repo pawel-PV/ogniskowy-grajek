@@ -1,12 +1,12 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 11:01 UTC
+Aktualizacja: 2026-07-11 11:03 UTC
 
 ## Wersja i środowisko
 
 - Repozytorium: `pawel-PV/ogniskowy-grajek`.
 - Gałąź: `feat/mvp-cpu-deploy`.
-- SHA bazowy: `4e08b81`; SHA implementacji zostanie wpisany po pierwszym commicie.
+- SHA implementacji: `d4d12b4`.
 - Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:dev` i
   `ogniskowy-grajek-worker-cpu:dev`.
 - Lokalny URL: `http://127.0.0.1:8501` (`/_stcore/health` zwraca `ok`).
