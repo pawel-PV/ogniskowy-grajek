@@ -1,0 +1,9 @@
+services:
+  worker:
+    build:
+      target: worker-gpu
+    image: ogniskowy-grajek-worker-gpu:${APP_VERSION:-dev}
+    environment:
+      AUDIO_DEVICE: auto
+    devices:
+      - "nvidia.com/gpu=all"
