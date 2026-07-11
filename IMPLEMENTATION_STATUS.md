@@ -1,11 +1,11 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 19:05 UTC
+Aktualizacja: 2026-07-11 16:58 UTC
 
 ## Wersja i środowisko
 
 - Repozytorium: `pawel-PV/ogniskowy-grajek`.
-- Kandydat v0.2: gałąź `agent/lyrics-songbook-v2`, baza `main` @ `033ab14`.
+- Kandydat v0.2: gałąź `agent/lyrics-songbook-v2`, implementacja @ `225ece9`, baza `main` @ `033ab14`.
 - Aktywna produkcja do czasu zielonego CI: v0.1, web `ogniskowy-grajek-web:3cec266`, worker
   `ogniskowy-grajek-worker-cpu:6235259`.
 - Profil: `CPU`; GPU pozostaje niedostępne z powodu fizycznie odłączonego eGPU.
