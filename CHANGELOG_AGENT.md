@@ -17,3 +17,4 @@
 - Przygotowano Streamlit, healthchecki i dokumentację do publikacji pod istniejącą ścieżką
   `https://api.klikfirma.pl/ogniskowy-grajek/`, bez zmian w `app_new` i bez nowego DNS.
 - Zaliczone: Ruff, 94 testy, Compose, build web oraz lokalny smoke HTTP/WebSocket bazowej ścieżki.
+- Commit implementacji prefiksu: `df76b02`.

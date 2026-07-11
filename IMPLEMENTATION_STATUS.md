@@ -10,7 +10,7 @@ Aktualizacja: 2026-07-11 15:41 UTC
 - Ochrona `main`: włączona; wymagane aktualne `ci`, liniowa historia i rozwiązane rozmowy.
 - Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:6235259` i
   `ogniskowy-grajek-worker-cpu:6235259`.
-- Gałąź publikacji ścieżkowej: `agent/api-path-routing`.
+- Kandydat publikacji ścieżkowej: `agent/api-path-routing` @ `df76b02`.
 - Lokalny URL po wdrożeniu zmiany: `http://127.0.0.1:8501/ogniskowy-grajek/`.
 - Usługa `ogniskowy-grajek.service`: zainstalowana, włączona i aktywna.
 - Publiczny URL: `https://api.klikfirma.pl/ogniskowy-grajek/` — oczekuje na regułę ścieżki tunelu;
