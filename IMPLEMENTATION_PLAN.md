@@ -13,5 +13,6 @@
 - [x] PR, zielone CI, squash merge i tag `v0.1.0-cpu`.
 - [ ] Po fizycznym power-cycle: aktywacja i smoke CUDA.
 
-Publikacja Cloudflare jest zablokowana wyłącznie brakiem tymczasowego tokenu z uprawnieniami
-`Cloudflare Tunnel Edit` i `DNS Edit`. GPU pozostaje odroczone do fizycznego podłączenia eGPU.
+Publikacja Cloudflare pod istniejącym `api.klikfirma.pl/ogniskowy-grajek` jest zablokowana wyłącznie
+brakiem uprawnienia `Cloudflare Tunnel Edit`; nowy DNS nie jest potrzebny. GPU pozostaje odroczone
+do fizycznego podłączenia eGPU.

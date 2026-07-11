@@ -4,6 +4,7 @@ enableCORS = true
 enableXsrfProtection = true
 address = "0.0.0.0"
 port = 8501
+baseUrlPath = "ogniskowy-grajek"
 maxUploadSize = 1
 
 [browser]

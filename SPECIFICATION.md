@@ -4,6 +4,8 @@
 
 Publiczna aplikacja Streamlit przyjmuje pojedynczy link YouTube i zwraca BPM, metrum 3/4 lub 4/4,
 capo 0–7, jeden schemat bicia, sekcje harmoniczne A/B/C oraz timeline łatwych chwytów.
+Interfejs działa z bazową ścieżką `/ogniskowy-grajek` i jest publikowany pod istniejącym hostem
+`api.klikfirma.pl`; obliczenia pozostają na NUC-u.
 
 Dozwolona paleta: `A, Am, C, D, Dm, E, Em, Fmaj7, G`. Sekcje nie udają rozpoznania
 „zwrotki” lub „refrenu”. Wynik ma wersję schematu `1.0` i można go pobrać jako JSON.

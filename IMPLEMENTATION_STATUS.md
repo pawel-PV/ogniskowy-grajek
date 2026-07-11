@@ -1,6 +1,6 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 11:12 UTC
+Aktualizacja: 2026-07-11 15:41 UTC
 
 ## Wersja i środowisko
 
@@ -10,9 +10,11 @@ Aktualizacja: 2026-07-11 11:12 UTC
 - Ochrona `main`: włączona; wymagane aktualne `ci`, liniowa historia i rozwiązane rozmowy.
 - Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:6235259` i
   `ogniskowy-grajek-worker-cpu:6235259`.
-- Lokalny URL: `http://127.0.0.1:8501` (`/_stcore/health` zwraca `ok`).
+- Kandydat publikacji ścieżkowej: `agent/api-path-routing` @ `df76b02`.
+- Lokalny URL po wdrożeniu zmiany: `http://127.0.0.1:8501/ogniskowy-grajek/`.
 - Usługa `ogniskowy-grajek.service`: zainstalowana, włączona i aktywna.
-- Publiczny URL: `https://ogniskowy-grajek.klikfirma.pl` — oczekuje na trasę i DNS Cloudflare.
+- Publiczny URL: `https://api.klikfirma.pl/ogniskowy-grajek/` — oczekuje na regułę ścieżki tunelu;
+  nowy rekord DNS nie jest potrzebny.
 
 ## Ukończone
 
@@ -26,13 +28,14 @@ Aktualizacja: 2026-07-11 11:12 UTC
 ## Weryfikacja
 
 - Ruff check i format: zaliczone.
-- Pytest: `93 passed` na Pythonie 3.11.
+- Pytest: `94 passed` na Pythonie 3.11.
 - `docker compose config -q`, `git diff --check` i kompilacja modułów: zaliczone.
 - Pełne obrazy web/CPU: zbudowane; natywny Chordino wykryty, syntetyczny smoke librosa: 117 BPM.
 - Legalny realny E2E na materiale Creative Commons: yt-dlp → Demucs CPU → Chordino → librosa →
   wynik → cleanup: zaliczony.
 - E2E przez wdrożoną kolejkę: `DONE` w 58 s, 144 BPM, 4/4, capo 5,
   `DEMUCS_CPU`/`CHORDINO`/`GEMINI`; koszt Gemini około `$0.00059`; workspace pusty po cleanupie.
+- Smoke bazowej ścieżki: UI i health HTTP 200, przekierowanie prefiksu 307, WebSocket 101.
 - Regresja usług: `api.klikfirma.pl/health` i `gra.klikfirma.pl` zwracają HTTP 200.
 
 ## Blokery zewnętrzne
@@ -41,9 +44,10 @@ Aktualizacja: 2026-07-11 11:12 UTC
   `nvidia-smi` nie komunikuje się ze sterownikiem, a Ollama jest offline. Wymagany fizyczny power-cycle
   obudowy eGPU i kontrola kabla Thunderbolt. Pełny smoke CUDA/VRAM nie może zostać wykonany zdalnie.
 - **Cloudflare: BLOCKED.** Bieżący token aplikacyjny zwraca `Not authorized` dla konfiguracji tunelu
-  i nie ma `Cloudflare Tunnel Edit`. Brak jeszcze DNS dla publicznego URL. Potrzebny jest tymczasowy
-  token z `Cloudflare Tunnel Edit` i `DNS Edit`; nie może trafić do repo ani `.env`.
+  i nie ma `Cloudflare Tunnel Edit`. Potrzebna jest reguła dla hosta `api.klikfirma.pl` i ścieżki
+  `^/ogniskowy-grajek(/.*)?$` przed ogólną trasą API; można dodać ją ręcznie w panelu albo użyć
+  tymczasowego tokenu Tunnel Edit.
 
 Watchdogi GPU/Ollama pozostają wyłączone po wcześniejszej pętli rebootów i nie są częścią tego wdrożenia.
-Następny krok po dostarczeniu tokenu: backup konfiguracji tunelu, nowa trasa/DNS i test
-HTTPS/WebSocket bez restartu `cloudflared`. Po powrocie użytkownika: fizyczny power-cycle i smoke CUDA.
+Następny krok po uzyskaniu Tunnel Edit: backup konfiguracji, reguła ścieżki i test HTTPS/WebSocket
+bez restartu `cloudflared`. Po powrocie użytkownika: fizyczny power-cycle i smoke CUDA.

@@ -1,7 +1,16 @@
 from __future__ import annotations
 
+import tomllib
+from pathlib import Path
+
 from ogniskowy_grajek.jobs import JobStage
 from streamlit_app import result_view, stage_label
+
+
+def test_streamlit_uses_public_api_base_path() -> None:
+    config = tomllib.loads(Path(".streamlit/config.toml").read_text(encoding="utf-8"))
+
+    assert config["server"]["baseUrlPath"] == "ogniskowy-grajek"
 
 
 def test_polish_stage_labels_cover_contract() -> None:
