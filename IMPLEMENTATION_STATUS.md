@@ -1,47 +1,47 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 16:10 UTC
+Aktualizacja: 2026-07-11 16:58 UTC
 
 ## Wersja i środowisko
 
 - Repozytorium: `pawel-PV/ogniskowy-grajek`.
-- Wydanie: `main` @ `6235259`, tag `v0.1.0-cpu`.
-- PR #1: squash merged; check `ci` zaliczony w 4 min 1 s.
-- Ochrona `main`: włączona; wymagane aktualne `ci`, liniowa historia i rozwiązane rozmowy.
-- Aktywny profil: `CPU`; web `ogniskowy-grajek-web:3cec266`, worker bez zmian kodu na
-  `ogniskowy-grajek-worker-cpu:6235259` (również oznaczony `3cec266` na następny restart).
-- Kandydat publikacji subdomeny: `agent/publish-subdomain` @ `3cec266`.
-- Lokalny URL po wdrożeniu zmiany: `http://127.0.0.1:8501/`.
-- Usługa `ogniskowy-grajek.service`: zainstalowana, włączona i aktywna.
-- Publiczny URL: `https://ogniskowy-grajek.klikfirma.pl/` — **LIVE**.
+- Kandydat v0.2: gałąź `agent/lyrics-songbook-v2`, implementacja @ `225ece9`, baza `main` @ `033ab14`.
+- Aktywna produkcja do czasu zielonego CI: v0.1, web `ogniskowy-grajek-web:3cec266`, worker
+  `ogniskowy-grajek-worker-cpu:6235259`.
+- Profil: `CPU`; GPU pozostaje niedostępne z powodu fizycznie odłączonego eGPU.
+- Usługa `ogniskowy-grajek.service`: aktywna. Publiczny URL:
+  `https://ogniskowy-grajek.klikfirma.pl/` — **LIVE v0.1**.
 
-## Ukończone
+## Kandydat v0.2 — ukończone
 
-- Osobna aplikacja, baza SQLite WAL, Compose, systemd i dokumentacja; `app_new` pozostało nietknięte.
-- Streamlit z trwałym pollingiem statusu i osobny pojedynczy worker kolejki.
-- Pipeline yt-dlp/FFmpeg, Demucs, Chordino/librosa oraz Ollama/Gemini/algorytm deterministyczny.
-- Fallbacki audio i LLM, limit kosztu Gemini, cleanup w każdym stanie terminalnym oraz 24-godzinny cache.
-- Publiczne limity kolejki/rate limit, walidacja URL i bezpieczne błędy.
-- Obrazy `web`, `worker-ci`, `worker-cpu` i `worker-gpu`; profil CPU działa na NUC-u.
+- `AnalysisResult` i pipeline `2.0`; UI zachowuje odczyt niewygasłych wyników `1.0`.
+- Oryginalne ręczne/automatyczne napisy YouTube PL/EN bez tłumaczeń, limit `json3` 2 MB.
+- Lokalny `faster-whisper==1.2.1`, model medium z przypiętej rewizji, CPU INT8, VAD i timestampy słów.
+- Bramki języka/pewności/liczby słów, timeout 600 s i rezerwa 240 s dla reszty pipeline.
+- Sylabizacja Pyphen, anchory akordów, linie `LYRIC`/`INSTRUMENTAL`, monospace UI i UTF-8 ChordPro.
+- Fallback do dotychczasowych akordów i wyłącznie linku wyszukiwania Ultimate Guitar.
+- Rozszerzone oświadczenie o prawach; audio, wokal i napisy robocze są usuwane bezwarunkowo.
 
-## Weryfikacja
+## Weryfikacja kandydata v0.2
 
-- Ruff check i format: zaliczone.
-- Pytest: `94 passed` na Pythonie 3.11.
-- `docker compose config -q`, `git diff --check` i kompilacja modułów: zaliczone.
-- Pełne obrazy web/CPU: zbudowane; natywny Chordino wykryty, syntetyczny smoke librosa: 117 BPM.
-- Legalny realny E2E na materiale Creative Commons: yt-dlp → Demucs CPU → Chordino → librosa →
-  wynik → cleanup: zaliczony.
-- E2E przez wdrożoną kolejkę: `DONE` w 58 s, 144 BPM, 4/4, capo 5,
-  `DEMUCS_CPU`/`CHORDINO`/`GEMINI`; koszt Gemini około `$0.00059`; workspace pusty po cleanupie.
-- Smoke bazowej ścieżki: UI i health HTTP 200, przekierowanie prefiksu 307, WebSocket 101.
-- Publiczny smoke subdomeny: UI i health HTTPS 200, WebSocket `wss://` 101, poprawny CNAME tunelu.
-- Regresja usług: `api.klikfirma.pl/health` i `gra.klikfirma.pl` zwracają HTTP 200.
+- Ruff format/check, `git diff --check`, kompilacja modułów i `docker compose config -q`: zaliczone.
+- Pytest: `111 passed` na Pythonie 3.11.
+- Obrazy `web`, `worker-ci` i pełny `worker-cpu`: zbudowane.
+- Worker CPU: SQLite WAL, FFmpeg i Chordino wykryte; syntetyczny rytm 120 BPM zmierzony jako 117 BPM.
+- Przypięty Whisper medium: `--asr-smoke` załadował model lokalnie na CPU; obraz ma około 2,37 GB.
+- Legalna próbka CC, napisy YouTube: `YOUTUBE_AUTO`, język `en`, 29 słów.
+- Ta sama legalna próbka, wymuszony lokalny ASR na miksie: `LOCAL_ASR`, `en`, pewność 0,923, 21 słów.
+- Pełny legalny E2E: yt-dlp → Demucs CPU → Chordino → śpiewnik `2.0`, 7 linii, cleanup `DONE`,
+  workspace usunięty.
+
+## Pozostało przed wydaniem
+
+- Commit, draft PR, wymagany zielony check `ci`, squash merge i obrazy oznaczone SHA.
+- Ponowne sprawdzenie pustej kolejki, przełączenie wyłącznie nowego web/worker i publiczny E2E v0.2.
+- Regresja `api.klikfirma.pl`/`gra.klikfirma.pl`, potwierdzenie pustego workspace i tag `v0.2.0-cpu`.
 
 ## Blokery zewnętrzne
 
 - **GPU: BLOCKED/DEFERRED.** Razer Core X ma stan `disconnected`, brak urządzenia NVIDIA w PCI,
   `nvidia-smi` nie komunikuje się ze sterownikiem, a Ollama jest offline. Wymagany fizyczny power-cycle
-  obudowy eGPU i kontrola kabla Thunderbolt. Pełny smoke CUDA/VRAM nie może zostać wykonany zdalnie.
-Watchdogi GPU/Ollama pozostają wyłączone po wcześniejszej pętli rebootów i nie są częścią tego wdrożenia.
-Następny krok po powrocie użytkownika: fizyczny power-cycle eGPU i pełny smoke CUDA/VRAM.
+  obudowy eGPU i kontrola kabla Thunderbolt. Watchdogi GPU/Ollama pozostają wyłączone.

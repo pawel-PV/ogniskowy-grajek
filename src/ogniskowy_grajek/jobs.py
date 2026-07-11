@@ -321,7 +321,7 @@ class JobStore:
     ) -> None:
         config = database if isinstance(database, AppConfig) else None
         self.database_path = str(config.database_path if config else database)
-        self.pipeline_version = pipeline_version or (config.pipeline_version if config else "1")
+        self.pipeline_version = pipeline_version or (config.pipeline_version if config else "2.0.0")
         self.queue_max = queue_max or (config.queue_max if config else 8)
         self.client_hourly_limit = client_hourly_limit or (config.client_hourly_limit if config else 3)
         self.client_daily_limit = client_daily_limit or (config.client_daily_limit if config else 10)

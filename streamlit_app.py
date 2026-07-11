@@ -28,6 +28,12 @@ from ogniskowy_grajek.jobs import (
     JobStoreError,
     validate_youtube_url,
 )
+from ogniskowy_grajek.lyrics import (
+    build_chordpro,
+    render_songbook_line,
+    ultimate_guitar_search_url,
+)
+from ogniskowy_grajek.models import Songbook, SongbookLineKind
 
 STAGE_LABELS: Mapping[JobStage, str] = {
     JobStage.QUEUED: "W kolejce",
@@ -98,6 +104,13 @@ def result_view(result: Mapping[str, Any]) -> dict[str, Any]:
     warnings = processing.get("warnings", [])
     if not isinstance(warnings, list):
         warnings = []
+    songbook: Songbook | None = None
+    raw_songbook = arrangement.get("songbook")
+    if isinstance(raw_songbook, Mapping):
+        try:
+            songbook = Songbook.model_validate(raw_songbook)
+        except Exception:
+            songbook = None
     return {
         "capo": arrangement.get("capo_fret", 0),
         "bpm": arrangement.get("bpm", "—"),
@@ -107,9 +120,12 @@ def result_view(result: Mapping[str, Any]) -> dict[str, Any]:
         "analysis_mode": processing.get("analysis_mode", "—"),
         "chord_detector": processing.get("chord_detector", "—"),
         "simplification_mode": processing.get("simplification_mode", "—"),
+        "lyrics_source": processing.get("lyrics_source", "UNAVAILABLE"),
+        "transcription_model": processing.get("transcription_model"),
         "warnings": [str(value) for value in warnings],
         "sections": sections,
         "timeline": timeline,
+        "songbook": songbook,
     }
 
 
@@ -162,6 +178,47 @@ def _render_result(job: JobRecord) -> None:
     st.code(str(view["strumming"]), language=None)
     st.caption("D = ruch w dół · U = ruch w górę")
 
+    songbook = view["songbook"]
+    source = job.result.get("source") if isinstance(job.result.get("source"), Mapping) else {}
+    if isinstance(songbook, Songbook):
+        st.subheader("Śpiewnik — akordy nad sylabami")
+        source_labels = {
+            "YOUTUBE_MANUAL": "oryginalne napisy YouTube",
+            "YOUTUBE_AUTO": "automatyczne napisy YouTube",
+            "LOCAL_ASR": "lokalna transkrypcja wokalu",
+        }
+        st.caption(
+            f"Źródło: {source_labels.get(songbook.source.value, songbook.source.value)} · "
+            f"język: {songbook.language} · wyrównanie sylab jest przybliżone"
+        )
+        for line in songbook.lines:
+            chord_line, text_line = render_songbook_line(line)
+            if line.kind is SongbookLineKind.INSTRUMENTAL:
+                timestamp = _format_seconds(line.start_seconds)
+                st.code(f"[{timestamp}] {text_line}", language=None)
+            else:
+                st.code(f"{chord_line}\n{text_line}", language=None)
+        chordpro = build_chordpro(
+            songbook,
+            title=str(source.get("title") or "Bez tytułu"),
+            capo=int(view["capo"] or 0),
+            bpm=int(view["bpm"]),
+            meter=str(view["meter"]),
+        ).encode("utf-8")
+        st.download_button(
+            "Pobierz śpiewnik ChordPro",
+            data=chordpro,
+            file_name=f"ogniskowy-grajek-{job.video_id}.cho",
+            mime="text/plain; charset=utf-8",
+            key=f"chordpro-{job.id}",
+        )
+    else:
+        st.warning("Nie udało się uzyskać wystarczająco pewnego tekstu. Akordy pozostają dostępne.")
+        st.link_button(
+            "Szukaj tekstu i chwytów w Ultimate Guitar",
+            ultimate_guitar_search_url(str(source.get("title") or "")),
+        )
+
     if view["sections"]:
         st.subheader("Sekcje")
         st.dataframe(view["sections"], use_container_width=True, hide_index=True)
@@ -175,6 +232,7 @@ def _render_result(job: JobRecord) -> None:
                 f"Analiza: {view['analysis_mode']}",
                 f"Akordy: {view['chord_detector']}",
                 f"Uproszczenie: {view['simplification_mode']}",
+                f"Tekst: {view['lyrics_source']}",
             )
         )
     )
@@ -249,8 +307,8 @@ def main() -> None:
     )
     st.title("🎸 Ogniskowy Grajek")
     st.write(
-        "Wklej link do utworu z YouTube. Przygotujemy proste chwyty, kapodaster "
-        "i jedno wygodne bicie na cały utwór."
+        "Wklej link do utworu z YouTube. Przygotujemy proste chwyty, kapodaster, "
+        "jedno wygodne bicie oraz — jeśli jakość pozwoli — śpiewnik z akordami nad sylabami."
     )
 
     try:
@@ -273,13 +331,14 @@ def main() -> None:
             max_chars=2_048,
         )
         rights_confirmed = st.checkbox(
-            "Mam prawa do tego materiału lub zgodę na wykonanie analizy.",
+            "Mam prawa lub zgodę na analizę, transkrypcję, wyświetlenie i tymczasowe "
+            "zapisanie tekstu tego materiału.",
         )
         submitted = st.form_submit_button("Przygotuj chwyty", type="primary")
 
     st.caption(
         "Nie pobieramy prywatnych filmów, playlist ani transmisji na żywo. "
-        "Pliki dźwiękowe i ścieżki robocze są usuwane po analizie."
+        "Pliki dźwiękowe i ścieżki robocze są usuwane po analizie; wynik i tekst wygasają po 24 h."
     )
     with st.expander("Ważne informacje o materiale"):
         st.write(

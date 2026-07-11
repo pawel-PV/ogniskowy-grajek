@@ -16,9 +16,16 @@ docker compose up -d --no-build --wait
 curl --fail http://127.0.0.1:8501/_stcore/health
 docker compose exec worker python -m ogniskowy_grajek.worker --doctor
 docker compose exec worker python -m ogniskowy_grajek.worker --audio-smoke
+docker compose exec worker python -m ogniskowy_grajek.worker --asr-smoke
 ```
 
-Jednostkę systemd instalować dopiero po udanym smoke. Nie wykonuje builda przy starcie hosta.
+`--asr-smoke` ładuje lokalny model medium i jest poleceniem wdrożeniowym, nie healthcheckiem. Pełny
+model jest przypięty rewizją w Dockerfile i powiększa obraz o około 1,5 GB. Jednostkę systemd
+instalować dopiero po udanym smoke. Nie wykonuje builda przy starcie hosta.
+
+Przed przełączeniem workera sprawdzić, że liczba jobów `PENDING/RUNNING` wynosi zero. Po wdrożeniu
+wykonać legalny test napisów oraz lokalnego ASR, pobrać JSON/ChordPro i potwierdzić pusty `data/work`.
+Audio, wokal i robocze `json3` muszą zniknąć również po błędzie i anulowaniu.
 
 ## Cloudflare
 
@@ -49,5 +56,6 @@ Nie włączać starych watchdogów GPU/Ollama bez osobnej naprawy rate limitu re
 ## Rollback
 
 - Publikacja: usunąć tylko trasę `ogniskowy-grajek.klikfirma.pl` i jej CNAME, potem zatrzymać usługę.
-- Aplikacja: przywrócić poprzedni tag obrazu i wykonać Compose `up`; nie używać `git reset`.
+- Aplikacja: przywrócić poprzedni tag obrazu v0.1 i wykonać Compose `up`; migracja SQLite nie jest
+  wymagana, a wyniki schematu 2.0 pozostaną danymi wygasającymi; nie używać `git reset`.
 - GPU: odtworzyć worker z samego `compose.yml`, co przywraca bezpieczny profil CPU.

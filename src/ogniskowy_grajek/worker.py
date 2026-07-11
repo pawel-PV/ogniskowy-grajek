@@ -62,6 +62,31 @@ def audio_smoke() -> int:
         return 1
 
 
+def asr_smoke() -> int:
+    """Load the pinned local Whisper model without running it in healthchecks."""
+
+    try:
+        from faster_whisper import WhisperModel
+
+        settings = PipelineSettings.from_env()
+        model_path = Path(settings.asr_model_path)
+        if not model_path.is_dir():
+            raise FileNotFoundError(model_path)
+        WhisperModel(
+            str(model_path),
+            device=settings.asr_device,
+            compute_type="float16" if settings.asr_device == "cuda" else "int8",
+            cpu_threads=4,
+            num_workers=1,
+            local_files_only=True,
+        )
+        print(f"asr_model=True device={settings.asr_device}")
+        return 0
+    except Exception as exc:
+        print(f"asr_model=False detail={exc.__class__.__name__}")
+        return 1
+
+
 def _pipeline_child(
     settings: PipelineSettings,
     job_id: str,
@@ -286,11 +311,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Worker Ogniskowego Grajka")
     parser.add_argument("--doctor", action="store_true")
     parser.add_argument("--audio-smoke", action="store_true")
+    parser.add_argument("--asr-smoke", action="store_true")
     args = parser.parse_args()
     if args.doctor:
         raise SystemExit(doctor())
     if args.audio_smoke:
         raise SystemExit(audio_smoke())
+    if args.asr_smoke:
+        raise SystemExit(asr_smoke())
     run_forever()
 
 

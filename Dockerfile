@@ -6,6 +6,8 @@ ARG DENO_SHA256=934d1bd5cb09eaed7f2e4a4fc58208d04a3c5c0fcde9f319d93d735265c67a4a
 ARG SONIC_ANNOTATOR_VERSION=1.7
 ARG SONIC_ANNOTATOR_SHA256=ec7838368aa6b20a039d04ebd5d91f4efd26e9c79f713b70843e35880151b919
 ARG CHORDINO_COMMIT=59f683ebb479c510b6b1a819ead3483778d72d4b
+ARG WHISPER_MODEL_REPOSITORY=Systran/faster-whisper-medium
+ARG WHISPER_MODEL_REVISION=08e178d48790749d25932bbc082711ddcfdfbc4f
 
 FROM debian:bookworm-slim AS native-tools
 ARG DENO_VERSION
@@ -51,7 +53,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     APP_HOME=/app
 WORKDIR /app
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md THIRD_PARTY_NOTICES.md ./
 COPY src ./src
 
 FROM app-base AS web
@@ -79,6 +81,8 @@ ENV PATH=/opt/sonic-annotator:${PATH} \
     OMP_NUM_THREADS=4 \
     MKL_NUM_THREADS=4 \
     OPENBLAS_NUM_THREADS=4
+ENV ASR_MODEL_PATH=/opt/whisper-models/faster-whisper-medium \
+    ASR_MODEL_NAME=Systran/faster-whisper-medium
 RUN sonic-annotator -l | grep -q "vamp:nnls-chroma:chordino:simplechord"
 
 FROM worker-base AS worker-ci
@@ -89,11 +93,18 @@ USER nobody
 RUN sonic-annotator -l | grep -q "vamp:nnls-chroma:chordino:simplechord"
 CMD ["python", "-m", "ogniskowy_grajek.worker"]
 
+FROM worker-base AS whisper-model
+ARG WHISPER_MODEL_REPOSITORY
+ARG WHISPER_MODEL_REVISION
+RUN pip install --no-cache-dir faster-whisper==1.2.1 \
+    && python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${WHISPER_MODEL_REPOSITORY}', revision='${WHISPER_MODEL_REVISION}', local_dir='/opt/whisper-models/faster-whisper-medium')"
+
 FROM worker-base AS worker-cpu
 RUN pip install --no-cache-dir torch==2.5.1 torchaudio==2.5.1 \
       --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir ".[worker]" \
     && python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
+COPY --from=whisper-model /opt/whisper-models /opt/whisper-models
 RUN mkdir -p /app/data /app/data/work && chown -R nobody:nogroup /app /opt/demucs-models
 USER nobody
 RUN sonic-annotator -l | grep -q "vamp:nnls-chroma:chordino:simplechord"
@@ -105,6 +116,7 @@ RUN pip install --no-cache-dir torch==2.5.1 torchaudio==2.5.1 \
       --index-url https://download.pytorch.org/whl/cu124 \
     && pip install --no-cache-dir ".[worker]" \
     && python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
+COPY --from=whisper-model /opt/whisper-models /opt/whisper-models
 RUN mkdir -p /app/data /app/data/work && chown -R nobody:nogroup /app /opt/demucs-models
 USER nobody
 RUN sonic-annotator -l | grep -q "vamp:nnls-chroma:chordino:simplechord"

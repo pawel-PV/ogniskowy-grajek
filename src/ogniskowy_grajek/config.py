@@ -66,7 +66,7 @@ class AppConfig:
 
     database_path: Path = Path("/data/ogniskowy-grajek.sqlite3")
     work_dir: Path = Path("/data/work")
-    pipeline_version: str = "1"
+    pipeline_version: str = "2.0.0"
     client_hmac_secret: str = ""
     queue_max: int = 8
     client_hourly_limit: int = 3
@@ -100,7 +100,7 @@ class AppConfig:
                 )
             ),
             work_dir=Path(_first_env("APP_WORK_ROOT", "OGNISKOWY_WORK_DIR", default="/data/work")),
-            pipeline_version=os.getenv("PIPELINE_VERSION", "1").strip() or "1",
+            pipeline_version=os.getenv("PIPELINE_VERSION", "2.0.0").strip() or "2.0.0",
             client_hmac_secret=secret,
             queue_max=_env_int_alias(("MAX_QUEUE_SIZE", "QUEUE_MAX"), 8),
             client_hourly_limit=_env_int_alias(("MAX_JOBS_PER_HOUR", "CLIENT_HOURLY_LIMIT"), 3),

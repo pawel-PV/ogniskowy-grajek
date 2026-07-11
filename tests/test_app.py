@@ -103,3 +103,47 @@ def test_result_view_ignores_invalid_or_audio_fields() -> None:
     assert view["warnings"] == []
     assert "audio" not in view
     assert "stems" not in view
+
+
+def test_result_view_accepts_songbook_v2_but_old_result_stays_compatible() -> None:
+    view = result_view(
+        {
+            "arrangement": {
+                "sections": [],
+                "timeline": [],
+                "songbook": {
+                    "source": "YOUTUBE_MANUAL",
+                    "language": "pl",
+                    "confidence": 1.0,
+                    "alignment_mode": "APPROXIMATE_SYLLABLE",
+                    "lines": [
+                        {
+                            "kind": "LYRIC",
+                            "start_seconds": 0,
+                            "end_seconds": 1,
+                            "syllables": [
+                                {
+                                    "text": "Pło",
+                                    "trailing": "",
+                                    "start_seconds": 0,
+                                    "end_seconds": 0.5,
+                                },
+                                {
+                                    "text": "nie",
+                                    "trailing": "",
+                                    "start_seconds": 0.5,
+                                    "end_seconds": 1,
+                                },
+                            ],
+                            "anchors": [{"event_id": "e1", "chord": "C", "syllable_index": 0}],
+                        }
+                    ],
+                },
+            },
+            "processing": {"warnings": [], "lyrics_source": "YOUTUBE_MANUAL"},
+        }
+    )
+
+    assert view["songbook"] is not None
+    assert view["songbook"].language == "pl"
+    assert view["lyrics_source"] == "YOUTUBE_MANUAL"

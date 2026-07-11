@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from .lyrics import SubtitleTrack, select_original_subtitle
+
 ALLOWED_HOSTS = {"youtube.com", "www.youtube.com", "music.youtube.com", "youtu.be"}
 ProgressCallback = Callable[[float, str], None]
 
@@ -27,6 +29,7 @@ class VideoMetadata:
     title: str
     duration_seconds: float
     webpage_url: str
+    subtitle_track: SubtitleTrack | None = None
 
 
 def validate_youtube_url(url: str) -> str:
@@ -106,6 +109,7 @@ def probe_video(url: str, *, max_duration_seconds: int = 600) -> VideoMetadata:
         title=str(info.get("title") or "Bez tytułu")[:300],
         duration_seconds=duration,
         webpage_url=str(info.get("webpage_url") or safe_url)[:512],
+        subtitle_track=select_original_subtitle(info),
     )
 
 

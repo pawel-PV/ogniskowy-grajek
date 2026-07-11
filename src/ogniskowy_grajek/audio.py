@@ -27,6 +27,7 @@ class StemPaths:
     drums: Path
     bass: Path
     other: Path
+    vocals: Path
 
 
 @dataclass(frozen=True)
@@ -87,10 +88,9 @@ def run_demucs(
         started=started,
     )
     stem_dir = output_root / "htdemucs" / input_wav.stem
-    required = {name: stem_dir / f"{name}.wav" for name in ("drums", "bass", "other")}
+    required = {name: stem_dir / f"{name}.wav" for name in ("drums", "bass", "other", "vocals")}
     if not all(path.is_file() and path.stat().st_size > 0 for path in required.values()):
         raise AudioProcessingError("Demucs did not produce required stems")
-    (stem_dir / "vocals.wav").unlink(missing_ok=True)
     progress(1.0, f"Separacja Demucs zakończona ({device.upper()})")
     return StemPaths(**required)
 
