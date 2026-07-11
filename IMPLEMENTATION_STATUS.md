@@ -1,14 +1,15 @@
 # Stan realizacji
 
-Aktualizacja: 2026-07-11 11:03 UTC
+Aktualizacja: 2026-07-11 11:12 UTC
 
 ## Wersja i środowisko
 
 - Repozytorium: `pawel-PV/ogniskowy-grajek`.
-- Gałąź: `feat/mvp-cpu-deploy`.
-- SHA implementacji: `d4d12b4`.
-- Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:dev` i
-  `ogniskowy-grajek-worker-cpu:dev`.
+- Wydanie: `main` @ `6235259`, tag `v0.1.0-cpu`.
+- PR #1: squash merged; check `ci` zaliczony w 4 min 1 s.
+- Ochrona `main`: włączona; wymagane aktualne `ci`, liniowa historia i rozwiązane rozmowy.
+- Aktywny profil: `CPU`, obrazy `ogniskowy-grajek-web:6235259` i
+  `ogniskowy-grajek-worker-cpu:6235259`.
 - Lokalny URL: `http://127.0.0.1:8501` (`/_stcore/health` zwraca `ok`).
 - Usługa `ogniskowy-grajek.service`: zainstalowana, włączona i aktywna.
 - Publiczny URL: `https://ogniskowy-grajek.klikfirma.pl` — oczekuje na trasę i DNS Cloudflare.
@@ -44,5 +45,5 @@ Aktualizacja: 2026-07-11 11:03 UTC
   token z `Cloudflare Tunnel Edit` i `DNS Edit`; nie może trafić do repo ani `.env`.
 
 Watchdogi GPU/Ollama pozostają wyłączone po wcześniejszej pętli rebootów i nie są częścią tego wdrożenia.
-Następny krok: PR/CI/merge/tag, a po dostarczeniu tokenu — backup konfiguracji tunelu, nowa trasa/DNS
-i test HTTPS/WebSocket bez restartu `cloudflared`.
+Następny krok po dostarczeniu tokenu: backup konfiguracji tunelu, nowa trasa/DNS i test
+HTTPS/WebSocket bez restartu `cloudflared`. Po powrocie użytkownika: fizyczny power-cycle i smoke CUDA.
