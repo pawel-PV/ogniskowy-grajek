@@ -1,0 +1,17 @@
+.env
+.venv/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+data/*
+!data/.gitkeep
+*.wav
+*.mp3
+*.flac
+*.part
+*.ytdl
+logs/

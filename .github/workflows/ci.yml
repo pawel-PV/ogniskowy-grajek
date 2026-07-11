@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[web,dev]"
+      - run: ruff check .
+      - run: pytest
+      - run: cp .env.example .env
+      - run: |
+          sed -i 's/^RATE_LIMIT_SECRET=.*/RATE_LIMIT_SECRET=ci-only-00000000000000000000000000000000000000000000000000000000/' .env
+          sed -i 's/^APP_VERSION=.*/APP_VERSION=ci/' .env
+          docker compose config -q
+      - run: docker build --target web -t ogniskowy-grajek-web:ci .
+      - run: docker build --target worker-ci -t ogniskowy-grajek-worker-cpu:ci .
+      - run: |
+          mkdir -p data/work
+          chmod 0777 data data/work
+          trap 'docker compose down --remove-orphans' EXIT
+          docker compose up -d --no-build --wait
+          curl --fail --silent http://127.0.0.1:8501/_stcore/health
+          docker compose exec -T worker python -m ogniskowy_grajek.worker --doctor

@@ -1,0 +1,23 @@
+[Unit]
+Description=Ogniskowy Grajek (Docker Compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=wewenek
+Group=wewenek
+SupplementaryGroups=docker
+WorkingDirectory=/home/wewenek/ai-home/ogniskowy-grajek
+ExecStartPre=+/usr/bin/install -d -o wewenek -g nogroup -m 0770 /home/wewenek/ai-home/ogniskowy-grajek/data
+ExecStartPre=+/usr/bin/install -d -o wewenek -g nogroup -m 0770 /home/wewenek/ai-home/ogniskowy-grajek/data/work
+ExecStartPre=/usr/bin/docker compose --env-file .env config -q
+ExecStart=/usr/bin/docker compose --env-file .env up -d --no-build --wait
+ExecStop=/usr/bin/docker compose --env-file .env stop --timeout 120
+TimeoutStartSec=180
+TimeoutStopSec=150
+
+[Install]
+WantedBy=multi-user.target
