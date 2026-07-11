@@ -18,7 +18,7 @@
 - [x] Bezpieczny fallback do samych akordów i linku wyszukiwania Ultimate Guitar.
 - [x] Rozszerzone oświadczenie o prawach i retencja tekstu przez 24 godziny.
 - [x] Build pełnego obrazu worker v0.2 i smoke modelu ASR na NUC-u.
-- [ ] Publiczny E2E v0.2, PR, zielone CI, squash merge i tag `v0.2.0-cpu`.
+- [x] Publiczny E2E v0.2, PR, zielone CI, squash merge i tag `v0.2.0-cpu`.
 - [ ] Po fizycznym power-cycle: aktywacja i smoke CUDA.
 
 Trasa Published application i CNAME dla `ogniskowy-grajek.klikfirma.pl` zostały utworzone ręcznie

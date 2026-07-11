@@ -29,3 +29,9 @@
 - Dodano bezpieczny fallback: dotychczasowe akordy oraz wyłącznie link wyszukiwania Ultimate Guitar.
 - UI nadal wyświetla niewygasłe wyniki 1.0; tekst i audio nigdy nie trafiają do Ollamy ani Gemini.
 - Testy przed publikacją: Ruff zaliczony, `111 passed`.
+- PR #5 przeszedł wymagany check `ci`, został scalony squash jako `27cd8f6a9cb8` i oznaczony
+  tagiem `v0.2.0-cpu`.
+- Wdrożono obrazy web/worker oznaczone SHA bez restartu Dockera, cloudflared ani innych usług.
+- Produkcyjny E2E kolejki utworzył wynik 2.0 z 8 liniami śpiewnika i eksportem ChordPro; cleanup
+  zakończył się jako `DONE`, workspace i kolejka pozostały puste.
+- Publiczny HTTPS/WebSocket oraz regresja `api.klikfirma.pl` i `gra.klikfirma.pl` są zielone.
