@@ -16,11 +16,12 @@ sed -i "s/^RATE_LIMIT_SECRET=.*/RATE_LIMIT_SECRET=${secret}/" .env
 unset secret
 docker compose build web worker
 docker compose up -d --no-build --wait
-curl --fail http://127.0.0.1:8501/_stcore/health
+curl --fail http://127.0.0.1:8501/ogniskowy-grajek/_stcore/health
 ```
 
-Interfejs lokalny: `http://127.0.0.1:8501`. Docelowy adres publiczny:
-`https://ogniskowy-grajek.klikfirma.pl`.
+Interfejs lokalny: `http://127.0.0.1:8501/ogniskowy-grajek/`. Docelowy adres publiczny:
+`https://api.klikfirma.pl/ogniskowy-grajek/`. Prefiks jest obsługiwany natywnie przez Streamlit,
+łącznie z WebSocketem i endpointem health.
 
 ## Architektura
 

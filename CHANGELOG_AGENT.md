@@ -13,4 +13,7 @@
 - Potwierdzono brak regresji `api.klikfirma.pl` i `gra.klikfirma.pl`.
 - Scalono PR #1 po zielonym CI, włączono ochronę `main` i utworzono tag `v0.1.0-cpu`.
 - Przełączono działające obrazy z etykiety `dev` na SHA wydania `6235259`.
-- Publikacja publicznego hosta oczekuje na tymczasowy token Cloudflare z Tunnel Edit i DNS Edit.
+- Pierwotna publikacja na osobnej subdomenie oczekiwała na token Cloudflare z Tunnel Edit i DNS Edit.
+- Przygotowano Streamlit, healthchecki i dokumentację do publikacji pod istniejącą ścieżką
+  `https://api.klikfirma.pl/ogniskowy-grajek/`, bez zmian w `app_new` i bez nowego DNS.
+- Zaliczone: Ruff, 94 testy, Compose, build web oraz lokalny smoke HTTP/WebSocket bazowej ścieżki.
