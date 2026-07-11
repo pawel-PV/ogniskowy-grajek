@@ -10,7 +10,7 @@
 - [x] Lokalny CPU smoke na legalnej próbce.
 - [x] Instalacja i uruchomienie `ogniskowy-grajek.service` bez restartu Dockera.
 - [ ] Publikacja przez istniejący Cloudflare Tunnel.
-- [ ] PR, zielone CI, squash merge i tag `v0.1.0-cpu`.
+- [x] PR, zielone CI, squash merge i tag `v0.1.0-cpu`.
 - [ ] Po fizycznym power-cycle: aktywacja i smoke CUDA.
 
 Publikacja Cloudflare jest zablokowana wyłącznie brakiem tymczasowego tokenu z uprawnieniami

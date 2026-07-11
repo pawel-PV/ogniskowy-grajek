@@ -11,4 +11,6 @@
 - Zaliczone: Ruff, 93 testy, build obrazu CPU i dwa realne E2E na legalnym materiale CC.
 - Uruchomiono profil CPU na `127.0.0.1:8501` i włączono jednostkę systemd bez zmian innych usług.
 - Potwierdzono brak regresji `api.klikfirma.pl` i `gra.klikfirma.pl`.
+- Scalono PR #1 po zielonym CI, włączono ochronę `main` i utworzono tag `v0.1.0-cpu`.
+- Przełączono działające obrazy z etykiety `dev` na SHA wydania `6235259`.
 - Publikacja publicznego hosta oczekuje na tymczasowy token Cloudflare z Tunnel Edit i DNS Edit.
