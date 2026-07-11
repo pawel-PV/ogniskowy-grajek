@@ -23,3 +23,9 @@
 - Przełączono Streamlit na root subdomeny; publiczne UI/health zwracają HTTPS 200, WebSocket 101,
   a regresja `api.klikfirma.pl` i `gra.klikfirma.pl` zakończyła się powodzeniem.
 - Commit wdrożonego wariantu subdomeny: `3cec266`.
+- Rozpoczęto v0.2 na `agent/lyrics-songbook-v2`: kontrakt wyniku i pipeline podniesiono do `2.0`.
+- Dodano oryginalne napisy YouTube PL/EN, lokalny faster-whisper medium, bramki jakości i cleanup.
+- Dodano przybliżoną sylabizację Pyphen, anchory akordów, linie instrumentalne i eksport ChordPro.
+- Dodano bezpieczny fallback: dotychczasowe akordy oraz wyłącznie link wyszukiwania Ultimate Guitar.
+- UI nadal wyświetla niewygasłe wyniki 1.0; tekst i audio nigdy nie trafiają do Ollamy ani Gemini.
+- Testy przed publikacją: Ruff zaliczony, `111 passed`.

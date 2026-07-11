@@ -20,6 +20,14 @@ from .audio import (
 )
 from .ingest import IngestError, download_wav, probe_video
 from .llm import BudgetLedger, transform
+from .lyrics import (
+    LyricsError,
+    Transcript,
+    build_songbook,
+    download_subtitle_json3,
+    parse_youtube_json3,
+    run_local_asr,
+)
 from .models import (
     AnalysisMode,
     AnalysisResult,
@@ -28,6 +36,7 @@ from .models import (
     CleanupStatus,
     LLMChord,
     LLMTransformation,
+    LyricsSource,
     ProcessingInfo,
     SongSection,
     SourceInfo,
@@ -62,7 +71,7 @@ class PipelineError(RuntimeError):
 class PipelineSettings:
     work_root: Path
     database_path: Path
-    pipeline_version: str = "1.0.0"
+    pipeline_version: str = "2.0.0"
     audio_device: str = "cpu"
     max_duration_seconds: int = 600
     max_download_bytes: int = 100 * 1024 * 1024
@@ -74,6 +83,11 @@ class PipelineSettings:
     gemini_api_key: str = ""
     gemini_api_key_paid: str = ""
     gemini_daily_budget_usd: float = 1.0
+    subtitle_max_bytes: int = 2 * 1024 * 1024
+    asr_device: str = "cpu"
+    asr_model_path: str = "/opt/whisper-models/faster-whisper-medium"
+    asr_model_name: str = "Systran/faster-whisper-medium"
+    asr_timeout_seconds: int = 600
 
     @classmethod
     def from_env(cls) -> PipelineSettings:
@@ -85,7 +99,7 @@ class PipelineSettings:
                     os.getenv("OGNISKOWY_DATABASE_PATH", "/app/data/ogniskowy-grajek.sqlite3"),
                 )
             ),
-            pipeline_version=os.getenv("PIPELINE_VERSION", "1.0.0"),
+            pipeline_version=os.getenv("PIPELINE_VERSION", "2.0.0"),
             audio_device=os.getenv("AUDIO_DEVICE", "cpu").lower(),
             max_duration_seconds=int(os.getenv("MAX_VIDEO_DURATION_SECONDS", "600")),
             max_download_bytes=int(os.getenv("MAX_DOWNLOAD_BYTES", str(100 * 1024 * 1024))),
@@ -97,6 +111,11 @@ class PipelineSettings:
             gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
             gemini_api_key_paid=os.getenv("GEMINI_API_KEY_PAID", ""),
             gemini_daily_budget_usd=float(os.getenv("GEMINI_DAILY_BUDGET_USD", "1.0")),
+            subtitle_max_bytes=int(os.getenv("SUBTITLE_MAX_BYTES", str(2 * 1024 * 1024))),
+            asr_device=os.getenv("ASR_DEVICE", "cpu").lower(),
+            asr_model_path=os.getenv("ASR_MODEL_PATH", "/opt/whisper-models/faster-whisper-medium"),
+            asr_model_name=os.getenv("ASR_MODEL_NAME", "Systran/faster-whisper-medium"),
+            asr_timeout_seconds=int(os.getenv("ASR_TIMEOUT_SECONDS", "600")),
         )
 
 
@@ -125,7 +144,7 @@ class SongPipeline:
         started: float,
         progress: ProgressCallback,
         warnings: list[str],
-    ) -> tuple[Path, Path, AnalysisMode]:
+    ) -> tuple[Path, Path, Path | None, AnalysisMode]:
         requested = self.settings.audio_device
         if requested not in {"cpu", "cuda", "auto"}:
             raise PipelineError("PROCESSING_FAILED", "Nieprawidłowy tryb urządzenia audio.")
@@ -159,6 +178,7 @@ class SongPipeline:
                 return (
                     harmonic,
                     drums,
+                    stems.vocals,
                     (AnalysisMode.DEMUCS_CUDA if device == "cuda" else AnalysisMode.DEMUCS_CPU),
                 )
             except Exception as exc:
@@ -174,7 +194,7 @@ class SongPipeline:
                 "PROCESSING_FAILED", "Nie udało się przeanalizować audio.", retryable=True
             ) from exc
         warnings.append("Separacja Demucs była niedostępna; wynik harmoniczny jest przybliżony.")
-        return harmonic, drums, AnalysisMode.MIX_APPROXIMATE
+        return harmonic, drums, None, AnalysisMode.MIX_APPROXIMATE
 
     def _analyze_chords(
         self,
@@ -228,6 +248,19 @@ class SongPipeline:
         try:
             progress("VALIDATING", 2, "Sprawdzanie linku i metadanych")
             metadata = probe_video(source_url, max_duration_seconds=self.settings.max_duration_seconds)
+            transcript: Transcript | None = None
+            if metadata.subtitle_track is not None:
+                progress("VALIDATING", 4, "Pobieranie oryginalnych napisów")
+                try:
+                    subtitle_path = download_subtitle_json3(
+                        source_url,
+                        metadata.subtitle_track,
+                        workspace,
+                        max_bytes=self.settings.subtitle_max_bytes,
+                    )
+                    transcript = parse_youtube_json3(subtitle_path, metadata.subtitle_track)
+                except LyricsError:
+                    warnings.append("Oryginalne napisy były niedostępne; użyto lokalnej transkrypcji.")
             self._remaining(started)
             progress("DOWNLOADING", 8, "Pobieranie audio")
             input_wav = download_wav(
@@ -238,7 +271,7 @@ class SongPipeline:
             )
             self._remaining(started)
             progress("PREPROCESSING", 22, "Przygotowanie separacji")
-            harmonic, drums, analysis_mode = self._separate(
+            harmonic, drums, vocals, analysis_mode = self._separate(
                 input_wav,
                 workspace,
                 started=started,
@@ -252,6 +285,24 @@ class SongPipeline:
             if meter_estimate.warning:
                 warnings.append(meter_estimate.warning)
             meter = meter_estimate.meter
+            if transcript is None:
+                progress("ANALYZING", 74, "Transkrypcja wokalu")
+                remaining = self._remaining(started)
+                asr_budget = min(self.settings.asr_timeout_seconds, max(0, remaining - 240))
+                if asr_budget >= 60:
+                    try:
+                        transcript = run_local_asr(
+                            vocals or input_wav,
+                            workspace,
+                            model_path=self.settings.asr_model_path,
+                            model_name=self.settings.asr_model_name,
+                            timeout_seconds=asr_budget,
+                            device=self.settings.asr_device,
+                        )
+                    except LyricsError:
+                        warnings.append("Nie udało się uzyskać pewnego tekstu; wynik zawiera same akordy.")
+                else:
+                    warnings.append("Pominięto transkrypcję, aby nie przekroczyć limitu czasu joba.")
             progress("ANALYZING", 78, "Analiza harmonii")
             # Keep two minutes for chroma fallback, simplification and cleanup.
             chordino_budget = max(1, self._remaining(started) - 120)
@@ -341,6 +392,13 @@ class SongPipeline:
             if outcome.warning:
                 warnings.append(outcome.warning)
             # Times, capo, strumming and deterministic shapes remain authoritative.
+            progress("FINALIZING", 94, "Układanie śpiewnika")
+            songbook = None
+            if transcript is not None:
+                try:
+                    songbook = build_songbook(transcript, timeline)
+                except Exception:
+                    warnings.append("Nie udało się ułożyć tekstu; wynik zawiera same akordy.")
             progress("FINALIZING", 96, "Budowanie wyniku")
             generated_at = datetime.now(UTC)
             result = AnalysisResult(
@@ -360,6 +418,7 @@ class SongPipeline:
                     strumming_pattern=pattern,
                     sections=section_models,
                     timeline=timeline,
+                    songbook=songbook,
                 ),
                 processing=ProcessingInfo(
                     analysis_mode=analysis_mode,
@@ -369,6 +428,8 @@ class SongPipeline:
                     approximate=analysis_mode == AnalysisMode.MIX_APPROXIMATE,
                     warnings=warnings,
                     estimated_cost_usd=outcome.estimated_cost_usd,
+                    lyrics_source=transcript.source if transcript else LyricsSource.UNAVAILABLE,
+                    transcription_model=transcript.model if transcript else None,
                 ),
                 generated_at=generated_at,
                 expires_at=generated_at + timedelta(hours=self.settings.result_ttl_hours),

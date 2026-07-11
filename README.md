@@ -1,8 +1,8 @@
 # Ogniskowy Grajek
 
 Publiczne MVP dla początkujących gitarzystów. Użytkownik podaje pojedynczy link YouTube, a aplikacja
-wyświetla BPM, metrum, pozycję kapodastra, jeden prosty schemat bicia oraz uporządkowane w czasie
-chwyty gitarowe.
+wyświetla BPM, metrum, pozycję kapodastra, jeden prosty schemat bicia, uporządkowane w czasie chwyty
+oraz — gdy jakość źródła pozwala — statyczny śpiewnik z akordami nad przybliżonymi sylabami.
 
 ## Aktualny tryb
 
@@ -30,8 +30,13 @@ Streamlit -> SQLite/WAL -> pojedynczy worker
                          -> yt-dlp + FFmpeg
                          -> Demucs CUDA | CPU | HPSS
                          -> Chordino | librosa chroma
+                         -> oryginalne napisy YT | lokalny faster-whisper
+                         -> Pyphen + wyrównanie akordów + ChordPro
                          -> Ollama | Gemini | deterministycznie
 ```
 
-Audio i stem-y są plikami tymczasowymi i nigdy nie są udostępniane. Wynik JSON wygasa po 24 godzinach.
-Zobacz `SPECIFICATION.md`, `IMPLEMENTATION_STATUS.md` i `ops/RUNTIME_HELPER.md`.
+Audio, stem-y i robocze napisy są plikami tymczasowymi i nigdy nie są udostępniane. Tekst nie trafia
+do Ollamy ani Gemini. Wynik JSON i ChordPro wygasają po 24 godzinach. Jeżeli tekstu brak, aplikacja
+zachowuje dotychczasowy wynik akordów i pokazuje wyłącznie bezpieczny link wyszukiwania Ultimate
+Guitar — backend nie pobiera stamtąd treści. Zobacz `SPECIFICATION.md`, `IMPLEMENTATION_STATUS.md`
+i `ops/RUNTIME_HELPER.md`.

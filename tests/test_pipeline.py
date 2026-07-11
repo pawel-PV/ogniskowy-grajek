@@ -12,7 +12,8 @@ from ogniskowy_grajek import pipeline as pipeline_module
 from ogniskowy_grajek.audio import RhythmAnalysis, StemPaths
 from ogniskowy_grajek.ingest import IngestError, VideoMetadata
 from ogniskowy_grajek.llm import TransformOutcome
-from ogniskowy_grajek.models import AnalysisMode, ChordDetector, SimplificationMode
+from ogniskowy_grajek.lyrics import LyricsError, SubtitleTrack, TimedWord, Transcript
+from ogniskowy_grajek.models import AnalysisMode, ChordDetector, LyricsSource, SimplificationMode
 from ogniskowy_grajek.music import ChordSegment
 from ogniskowy_grajek.pipeline import (
     PipelineError,
@@ -78,6 +79,11 @@ def _mock_successful_analysis(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pipeline_module, "prepare_analysis_tracks", tracks)
     monkeypatch.setattr(
         pipeline_module,
+        "run_local_asr",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(LyricsError("no reliable lyrics")),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
         "analyze_rhythm",
         lambda _path: RhythmAnalysis(
             bpm=120,
@@ -113,7 +119,12 @@ def test_pipeline_retries_cuda_once_on_cpu_and_cleans_workspace(monkeypatch, tmp
         timeouts.append(timeout_seconds)
         if device == "cuda":
             raise RuntimeError("simulated CUDA OOM")
-        return StemPaths(workspace / "drums.wav", workspace / "bass.wav", workspace / "other.wav")
+        return StemPaths(
+            workspace / "drums.wav",
+            workspace / "bass.wav",
+            workspace / "other.wav",
+            workspace / "vocals.wav",
+        )
 
     monkeypatch.setattr(pipeline_module, "run_demucs", demucs)
     settings = PipelineSettings(
@@ -132,8 +143,153 @@ def test_pipeline_retries_cuda_once_on_cpu_and_cleans_workspace(monkeypatch, tmp
     assert timeouts[0] <= 600
     assert timeouts[1] <= 1500
     assert result.processing.analysis_mode is AnalysisMode.DEMUCS_CPU
+    assert result.schema_version == "2.0"
+    assert result.arrangement.songbook is None
     assert any("CUDA" in warning for warning in result.processing.warnings)
     assert not (settings.work_root / "job-cuda-cpu").exists()
+
+
+def test_pipeline_prefers_original_captions_and_builds_songbook(monkeypatch, tmp_path: Path) -> None:
+    _mock_successful_analysis(monkeypatch, tmp_path)
+    track = SubtitleTrack("pl", "pl", LyricsSource.YOUTUBE_MANUAL)
+    monkeypatch.setattr(
+        pipeline_module,
+        "probe_video",
+        lambda *_args, **_kwargs: VideoMetadata(
+            video_id="dQw4w9WgXcQ",
+            title="Próbka",
+            duration_seconds=16,
+            webpage_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            subtitle_track=track,
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "download_subtitle_json3",
+        lambda _url, _track, workspace, **_kwargs: workspace / "captions.pl.json3",
+    )
+    transcript = Transcript(
+        tuple(TimedWord(f"słowo{i}", i, i + 0.8, 1.0, i == 7) for i in range(8)),
+        "pl",
+        1.0,
+        LyricsSource.YOUTUBE_MANUAL,
+    )
+    monkeypatch.setattr(pipeline_module, "parse_youtube_json3", lambda *_args: transcript)
+    monkeypatch.setattr(
+        pipeline_module,
+        "run_local_asr",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("ASR must not run")),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "run_demucs",
+        lambda _input, workspace, **_kwargs: StemPaths(
+            workspace / "drums.wav",
+            workspace / "bass.wav",
+            workspace / "other.wav",
+            workspace / "vocals.wav",
+        ),
+    )
+    settings = PipelineSettings(
+        work_root=tmp_path / "work",
+        database_path=tmp_path / "jobs.sqlite3",
+    )
+
+    result = SongPipeline(settings).run(
+        job_id="job-captions",
+        source_url="https://youtu.be/dQw4w9WgXcQ",
+        progress=lambda *_args: None,
+    )
+
+    assert result.arrangement.songbook is not None
+    assert result.arrangement.songbook.source is LyricsSource.YOUTUBE_MANUAL
+    assert result.processing.lyrics_source is LyricsSource.YOUTUBE_MANUAL
+    assert not (settings.work_root / "job-captions").exists()
+
+
+def test_pipeline_uses_vocal_stem_for_local_asr(monkeypatch, tmp_path: Path) -> None:
+    _mock_successful_analysis(monkeypatch, tmp_path)
+    vocals_seen: list[str] = []
+    monkeypatch.setattr(
+        pipeline_module,
+        "run_demucs",
+        lambda _input, workspace, **_kwargs: StemPaths(
+            workspace / "drums.wav",
+            workspace / "bass.wav",
+            workspace / "other.wav",
+            workspace / "vocals.wav",
+        ),
+    )
+
+    def asr(audio_path, *_args, **_kwargs):
+        vocals_seen.append(Path(audio_path).name)
+        return Transcript(
+            tuple(TimedWord(f"word{i}", i, i + 0.8, 0.8, i == 7) for i in range(8)),
+            "en",
+            0.8,
+            LyricsSource.LOCAL_ASR,
+            "medium",
+        )
+
+    monkeypatch.setattr(pipeline_module, "run_local_asr", asr)
+    settings = PipelineSettings(
+        work_root=tmp_path / "work",
+        database_path=tmp_path / "jobs.sqlite3",
+    )
+
+    result = SongPipeline(settings).run(
+        job_id="job-asr",
+        source_url="https://youtu.be/dQw4w9WgXcQ",
+        progress=lambda *_args: None,
+    )
+
+    assert vocals_seen == ["vocals.wav"]
+    assert result.processing.lyrics_source is LyricsSource.LOCAL_ASR
+    assert result.processing.transcription_model == "medium"
+    assert result.arrangement.songbook is not None
+    assert not (settings.work_root / "job-asr").exists()
+
+
+def test_songbook_layout_failure_keeps_authoritative_chord_result(monkeypatch, tmp_path: Path) -> None:
+    _mock_successful_analysis(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        pipeline_module,
+        "run_demucs",
+        lambda _input, workspace, **_kwargs: StemPaths(
+            workspace / "drums.wav",
+            workspace / "bass.wav",
+            workspace / "other.wav",
+            workspace / "vocals.wav",
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "run_local_asr",
+        lambda *_args, **_kwargs: Transcript(
+            tuple(TimedWord(f"word{i}", i, i + 0.8, 0.8, i == 7) for i in range(8)),
+            "en",
+            0.8,
+            LyricsSource.LOCAL_ASR,
+            "medium",
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "build_songbook",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("malformed lyrics")),
+    )
+    settings = PipelineSettings(work_root=tmp_path / "work", database_path=tmp_path / "jobs.sqlite3")
+
+    result = SongPipeline(settings).run(
+        job_id="job-songbook-failure",
+        source_url="https://youtu.be/dQw4w9WgXcQ",
+        progress=lambda *_args: None,
+    )
+
+    assert result.arrangement.timeline
+    assert result.arrangement.songbook is None
+    assert any("same akordy" in warning for warning in result.processing.warnings)
+    assert not (settings.work_root / "job-songbook-failure").exists()
 
 
 def test_pipeline_falls_back_to_hpss_and_chroma_with_unconditional_cleanup(
